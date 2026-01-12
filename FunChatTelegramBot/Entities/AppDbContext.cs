@@ -7,6 +7,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Chat> Chats { get; set; }
     public DbSet<UserChatCounter> Counters { get; set; }
+    public DbSet<ChatRunLog> RunLogs { get; set; }
     public string Path { get; set; }
 
     public AppDbContext()
@@ -38,13 +39,22 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<UserChatCounter>(entity =>
         {
             entity.HasKey(ucc => ucc.Id);
-            entity.HasIndex(ucc => new {ucc.ChatId, ucc.UserId});
+            entity.HasIndex(ucc => new {ucc.ChatId, ucc.UserId})
+                .IsUnique();
             entity.HasOne(ucc => ucc.Chat)
                 .WithMany(c => c.UserCounters)
-                .HasForeignKey(ucc => ucc.ChatId);
+                .HasForeignKey(ucc => ucc.ChatId)
+                .OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(ucc => ucc.User)
                 .WithMany(u => u.ChatCounters)
-                .HasForeignKey(ucc => ucc.UserId);
+                .HasForeignKey(ucc => ucc.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ChatRunLog>(entity =>
+        {
+            entity.HasKey(r => r.ChatId);
+            entity.Property(r => r.LastRunAt)
+                .HasConversion<DateOnlyConverter>();
         });
     }
 }
